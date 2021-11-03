@@ -1,8 +1,4 @@
-# apollo-datasource-graphql
-
-Forked from https://www.npmjs.com/package/apollo-datasource-graphql with below changes:
-- Fix error messages
-- Add timeout
+# apollo-graphql-datasource
 
 Connect your GraphQL server to an existing GraphQL API using DataSources.
 
@@ -12,23 +8,16 @@ Connect your GraphQL server to an existing GraphQL API using DataSources.
 
 ### Install
 
-```
-yarn add apollo-datasource-graphql
-```
-
-or
-
-```
-npm i apollo-datasource-graphql --save
+```sh
+npm i apollo-graphql-datasource --save
 ```
 
 ### Usage
 
 Define a data source by extending the `GraphQLDataSource` class. You can then implement the queries and mutations that your resolvers require.
 
-
 ```javascript
-import { GraphQLDataSource } from 'apollo-datasource-graphql';
+import { GraphQLDataSource } from 'apollo-graphql-datasource';
 import { gql } from 'apollo-server-express';
 
 const CRAFT_BEERS = gql`
