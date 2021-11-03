@@ -1,16 +1,8 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
     "declaration": true,
-    "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
-    "module": "commonjs",
-    "noUnusedLocals": true,
-    "outDir": "dist",
-    "sourceMap": false,
-    "target": "esnext",
-    "strict": true,
-    "noImplicitAny": false
+    "emitDeclarationOnly": true
   },
   "include": [
     "src/**/*"
