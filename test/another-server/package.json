@@ -1,0 +1,23 @@
+{
+  "name": "another-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/federation": "0.28.0",
+    "apollo-server": "2.25.2",
+    "appolo-graphql-datasource": "^0.0.6",
+    "graphql": "^15.7.2",
+    "graphql-fields": "^2.0.3",
+    "graphql-parse-resolve-info": "^4.12.0",
+    "graphql-tag": "^2.12.5",
+    "json-to-graphql-query": "^2.1.0",
+    "lodash": "^4.17.21"
+  }
+}

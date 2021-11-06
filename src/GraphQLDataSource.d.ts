@@ -1,6 +1,7 @@
 export = GraphQLDataSource;
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
+ * @typedef { import('graphql').DocumentNode} DocumentNode
  */
 /**
  * Apollo GraphQL Data source
@@ -12,11 +13,12 @@ declare class GraphQLDataSource extends DataSource<any> {
     /**
      * Creates an instance of GraphQLDataSource.
      * @param {String} url the URL to the graphQL server
+     * @param {DocumentNode} typeDefs typeDefs
      * @param {string} [schemaPrefix=''] schema prefix.
      * The prefix will be removed from the graphql query before sending to the destination datasource
      * @memberof GraphQLDataSource
      */
-    constructor(url: string, schemaPrefix?: string);
+    constructor(url: string, typeDefs: DocumentNode, schemaPrefix?: string);
     baseURL: string;
     context: any;
     /**
@@ -46,7 +48,8 @@ declare class GraphQLDataSource extends DataSource<any> {
     #private;
 }
 declare namespace GraphQLDataSource {
-    export { GraphQLResolveInfo };
+    export { GraphQLResolveInfo, DocumentNode };
 }
 import { DataSource } from "apollo-datasource";
 type GraphQLResolveInfo = import('graphql/type').GraphQLResolveInfo;
+type DocumentNode = import('graphql').DocumentNode;
