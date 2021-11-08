@@ -14,94 +14,89 @@ npm i apollo-graphql-datasource --save
 
 ### Usage
 
-Define a data source by extending the `GraphQLDataSource` class. You can then implement the queries and mutations that your resolvers require.
+Define a data source by creating new the `GraphQLDataSource` instance. The below example will create a GraphQL datasource to the [Apollo Federation Demo](https://github.com/apollographql/federation-demo) gateway. In the real world project, your schema may conflict with the destination schema. Therefore, a prefix should be added to the destination schema types, in this example: `Demo0`
 
-```javascript
-import { GraphQLDataSource } from 'apollo-graphql-datasource';
-import { gql } from 'apollo-server-express';
+```js
+const GraphQLDataSource = require('appolo-graphql-datasource');
+const { gql } = require('apollo-server');
 
-const CRAFT_BEERS = gql`
-  query {
-    craftBeers {
-      name
-      style
-      abv
-      brewery {
-        name
-      }
-    }
+const typeDefs = gql`
+  type Demo0Product {
+    upc: String!
+    name: String
+    price: Int
+    weight: Int
+    reviews: [Demo0Review]
+    inStock: Boolean
+    shippingEstimate: Int
+
+    calulatedField(inputArgs: SomeInput): Int
+    calulatedField2(inputArgs: SomeInput!): CalulatedField2Response
+  }
+
+  type Demo0Review {
+    id: ID!
+    body: String
+    author: Demo0User
+    product: Demo0Product
+  }
+
+  type Demo0User {
+    id: ID!
+    name: String
+    username: String
+    reviews: [Demo0Review]
+  }
+
+  enum ProductEnum {
+    VALUE_1
+    VALUE_2
+  }
+
+  input SomeInput {
+    args1: Int
+    args2: String!
+  }
+
+  type CalulatedField2Response {
+    value1: Int
+    value2: Int
+    value3: String
+  }
+
+  type Query {
+    Demo0me: Demo0User
+    Demo0topProducts(first: Int = 5, status: ProductEnum): [Demo0Product]
+  }
+
+  type Mutation {
+    Demo0doSth(first: Int = 5): [Demo0Product]
   }
 `;
 
-export class CraftBeerGraphQLAPI extends GraphQLDataSource {
-  baseURL = 'https//craft-beer-api.example/graphql';
-
-  async getCraftBeers() {
-    try {
-      const response = await this.query(CRAFT_BEERS);
-
-      return response.data.craftBeers;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-}
+const dataSource = new GraphQLDataSource(
+  'http://federation.gateway.url/',
+  typeDefs,
+  'Demo0',
+);
 ```
 
 ### GraphQL Operations
 
-The `query` and `mutation` methods on the `GraphQLDataSource` make a request to the GraphQL server. Both accepts a second parameter, `options`, which can be used to pass variables, context, etc.
+- The `query` and `mutation` methods on the `GraphQLDataSource` make a request to the GraphQL server. The datasource will **foward** the client's **query** to the destination server.
+- The `query` and `mutation` methods accepts a second parameter, `options`, which can be used to pass the additional **headers**.
+- The datasource also handles:
+  - mutiple `queries` or `mutations` in one request
+  - fragment
+  - enum
 
-```javascript
-async searchCraftBeerByName(name) {
-  try {
-    const response = await this.query(CRAFT_BEERS, {
-      variables: {
-        name,
-      },
-    });
-
-    return response.data.craftBeer;
-  } catch (error) {
-    console.error(error);
-  }
+```js
+async Demo0topProducts(parent, args, context, info) {
+  const { demoFederationAPI } = context.dataSources;
+  const { secretToken } = context;
+  const headers = {
+    serviceSecret: secretToken,
+  };
+  return demoFederationAPI.query(info, { headers });
 }
 ```
-
-|Parameter   |Description   |Required|
-|---|---|---|
-|graphQLDocument|A GraphQL document|true|
-|options|An object that defines options to pass with the GraphQL request|false|
-
-
-|Options   |Description   |Required|
-|---|---|---|
-|variables|A GraphQL document|false|
-|operationName|A string name of the query if it is named, otherwise it is null|false|
-|context|Metadata to be passed between Apollo Links|false|
-|extensions|A map to store extensions data to be sent to the server|false|
-
-### Intercepting Operations
-
-You can intercept the request to set headers on an outgoing request. Since Apollo Data Sources have access to GraphQL context, you can store a user token or other information you need to have available when making a request.
-
-Add the method `willSendRequest` to your class which will receive the `request` object. Here, you can modify the request to meet your needs.
-
-```javascript
-  willSendRequest(request) {
-    const { accessToken } = this.context;
-
-    if (!request.headers) {
-      request.headers = {};
-    }
-
-    request.headers.authorization = accessToken;
-  }
-```
-
-## TODO
-
-- [x] Complete README
-- [x] Mutation method
-- [ ] Test Suite
-- [ ] Request caching
