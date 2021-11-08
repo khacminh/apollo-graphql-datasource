@@ -96,12 +96,20 @@ module.exports = () => ({
   - fields with arguments
 
 ```js
-async Demo0topProducts(parent, args, context, info) {
+function genericQuery(parent, args, context, info) {
   const { demoFederationAPI } = context.dataSources;
   const { secretToken } = context;
   const headers = {
     serviceSecret: secretToken,
   };
+
   return demoFederationAPI.query(info, { headers });
+}
+
+module.exports = {
+  Query: {
+    Demo0topProducts: (...params) => genericQuery(...params),
+    // ...others queries
+  }
 }
 ```
