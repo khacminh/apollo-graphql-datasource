@@ -79,6 +79,10 @@ const dataSource = new GraphQLDataSource(
   typeDefs,
   'Demo0',
 );
+
+module.exports = () => ({
+  demoFederationAPI: dataSource,
+});
 ```
 
 ### GraphQL Operations
