@@ -89,6 +89,7 @@ const dataSource = new GraphQLDataSource(
   - mutiple `queries` or `mutations` in one request
   - fragment
   - enum
+  - fields with arguments
 
 ```js
 async Demo0topProducts(parent, args, context, info) {
