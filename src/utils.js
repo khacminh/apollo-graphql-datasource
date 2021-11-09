@@ -5,6 +5,7 @@ const { TypeInfo, visitWithTypeInfo, visit, parse } = require('graphql');
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
  * @typedef { import('graphql').DocumentNode} DocumentNode
+ * @typedef { import('graphql').GraphQLSchema} GraphQLSchema
  */
 
 function checkIsEnum(name, value, allEnums, possibleEnums) {
@@ -87,6 +88,13 @@ function findAllEnums(typeDefs) {
   }));
 }
 
+/**
+ *
+ * @param {GraphQLSchema} schema schema
+ * @param {[Object]} allEnums all enums in the schema
+ * @param {String} query GraphQL query
+ * @returns Array of possibleEnums in the query
+ */
 function getPossibleEnumTypes(schema, allEnums, query) {
   const typeInfo = new TypeInfo(schema);
   const possibleEnums = [];

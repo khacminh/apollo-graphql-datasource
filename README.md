@@ -20,7 +20,7 @@ Define a data source by creating new the `GraphQLDataSource` instance. The below
 const GraphQLDataSource = require('appolo-graphql-datasource');
 const { gql } = require('apollo-server');
 
-const typeDefs = gql`
+const typeDefs = `
   type Demo0Product {
     upc: String!
     name: String

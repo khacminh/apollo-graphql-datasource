@@ -3,8 +3,8 @@ const { DataSource } = require('apollo-datasource');
 const { ApolloError } = require('apollo-server-errors');
 const { parseResolveInfo } = require('graphql-parse-resolve-info');
 const { jsonToGraphQLQuery } = require('json-to-graphql-query');
-const { print } = require('graphql');
-const { makeExecutableSchema } = require('@graphql-tools/schema');
+const { print, buildSchema } = require('graphql');
+const { gql } = require('graphql-tag');
 const { createQueryObject, findAllEnums, getPossibleEnumTypes } = require('./utils');
 
 /**
@@ -32,7 +32,7 @@ class GraphQLDataSource extends DataSource {
   /**
    * Creates an instance of GraphQLDataSource.
    * @param {String} url the URL to the graphQL server
-   * @param {DocumentNode} typeDefs typeDefs
+   * @param {String} typeDefs typeDefs in String
    * @param {string} [schemaPrefix=''] schema prefix.
    * The prefix will be removed from the graphql query before sending to the destination datasource
    * @memberof GraphQLDataSource
@@ -45,9 +45,10 @@ class GraphQLDataSource extends DataSource {
 
     this.baseURL = url;
     this.#prefix = schemaPrefix;
-    this.#typeDefs = typeDefs;
-    this.#schema = makeExecutableSchema({ typeDefs });
-    this.#allEnums = findAllEnums(typeDefs);
+    this.#typeDefs = gql`${typeDefs}`;
+    // this.#schema = makeExecutableSchema({ typeDefs }, {});
+    this.#schema = buildSchema(typeDefs, { assumeValid: true });
+    this.#allEnums = findAllEnums(this.#typeDefs);
 
     this.#client = axios.create({
       baseURL: url,
@@ -65,7 +66,7 @@ class GraphQLDataSource extends DataSource {
    * @param {GraphQLResolveInfo} info GraphQLResolveInfo
    * @param {Object} options
    * @param {Object} options.headers additional headers
-   * @returns {*} mutation result
+   * @returns {*} mutation result - HTTP JSON body
    * @memberof GraphQLDataSource
    */
   async mutation(info, options) {
@@ -78,7 +79,7 @@ class GraphQLDataSource extends DataSource {
    * @param {GraphQLResolveInfo} info GraphQLResolveInfo
    * @param {Object} options
    * @param {Object} options.headers additional headers
-   * @returns {*} query result
+   * @returns {*} query result - HTTP JSON body
    * @memberof GraphQLDataSource
    */
   async query(info, options) {
@@ -136,11 +137,10 @@ class GraphQLDataSource extends DataSource {
   async #executeOperation(query, headers) {
     try {
       const response = await this.#client.post('/', { query }, { headers });
-      const data = response?.data?.data || {};
-      const keys = Object.keys(data);
-      return data[keys[0]] || {};
+
+      return response?.data || {};
     } catch (error) {
-      const { status } = error.response;
+      const status = error?.response?.status || 'UNKNOWN';
       throw new ApolloError(`Data Source Error with status code: ${status}`);
     }
   }

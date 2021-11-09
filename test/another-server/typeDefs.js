@@ -1,7 +1,7 @@
 const { gql } = require('apollo-server');
 
-const typeDefsWithPrefix = gql`
-  type Demo0Product {
+const typeDefsWithPrefix = `
+  type Demo0Product @key(fields: "id") {
     upc: String!
     name: String
     price: Int

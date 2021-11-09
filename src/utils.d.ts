@@ -1,5 +1,6 @@
 export type GraphQLResolveInfo = import('graphql/type').GraphQLResolveInfo;
 export type DocumentNode = import('graphql').DocumentNode;
+export type GraphQLSchema = import('graphql').GraphQLSchema;
 export function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, prefix }: {
     input: any;
     allEnums: any;
@@ -24,4 +25,11 @@ export function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, 
  * @returns
  */
 export function findAllEnums(typeDefs: DocumentNode): any;
-export function getPossibleEnumTypes(schema: any, allEnums: any, query: any): any[];
+/**
+ *
+ * @param {GraphQLSchema} schema schema
+ * @param {[Object]} allEnums all enums in the schema
+ * @param {String} query GraphQL query
+ * @returns Array of possibleEnums in the query
+ */
+export function getPossibleEnumTypes(schema: GraphQLSchema, allEnums: [any], query: string): any[];

@@ -1,4 +1,4 @@
-const { ApolloServer } = require('apollo-server');
+const { ApolloServer, gql } = require('apollo-server');
 const { buildFederatedSchema } = require('@apollo/federation');
 const typeDefs = require('./typeDefs');
 const dataSources = require('./datasource');
@@ -6,7 +6,7 @@ const resolvers = require('./resolvers');
 
 const server = new ApolloServer({
   schema: buildFederatedSchema([{
-    typeDefs,
+    typeDefs: gql`${typeDefs}`,
     resolvers,
   }]),
   dataSources,
