@@ -29,15 +29,18 @@ class GraphQLDataSource extends DataSource {
 
   #schema;
 
+  #transformToScalarTypes = [];
+
   /**
    * Creates an instance of GraphQLDataSource.
    * @param {String} url the URL to the graphQL server
    * @param {String} typeDefs typeDefs in String
-   * @param {string} [schemaPrefix=''] schema prefix.
+   * @param {String} [schemaPrefix=''] schema prefix.
+   * @param {[String]} [transformToScalarTypes=['']] Types will be transform to Scalar
    * The prefix will be removed from the graphql query before sending to the destination datasource
    * @memberof GraphQLDataSource
    */
-  constructor(url, typeDefs, schemaPrefix = '') {
+  constructor(url, typeDefs, schemaPrefix = '', transformToScalarTypes = []) {
     super();
     if (!url) {
       throw new Error('missing url');
@@ -49,6 +52,7 @@ class GraphQLDataSource extends DataSource {
     // this.#schema = makeExecutableSchema({ typeDefs }, {});
     this.#schema = buildSchema(typeDefs, { assumeValid: true });
     this.#allEnums = findAllEnums(this.#typeDefs);
+    this.#transformToScalarTypes = transformToScalarTypes;
 
     this.#client = axios.create({
       baseURL: url,
@@ -124,6 +128,7 @@ class GraphQLDataSource extends DataSource {
       isTopLevel: true,
       type,
       prefix: this.#prefix,
+      transformToScalarTypes: this.#transformToScalarTypes,
     });
     return jsonToGraphQLQuery(queryObject);
   }

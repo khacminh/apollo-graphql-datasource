@@ -647,20 +647,25 @@ function convertArgs(args) {
   return output;
 }
 
-function createQueryObject({ input, isTopLevel, type, prefix }) {
+function createQueryObject({ input, isTopLevel, type, prefix, transformToIDTypes = [] }) {
   const { name, args, fieldsByTypeName } = input;
   const hasChildren = !_.isEmpty(fieldsByTypeName);
   const hasArgs = !_.isEmpty(args);
 
-  if (!hasChildren) {
+  const firstChildType = _.keys(fieldsByTypeName)[0];
+  const shouldTransformToID = transformToIDTypes.includes(firstChildType);
+  if (!hasChildren || shouldTransformToID) {
     return hasArgs ? { __args: convertArgs(args) } : true;
   }
 
-  const firstChild = fieldsByTypeName[_.keys(fieldsByTypeName)[0]];
+  const firstChild = fieldsByTypeName[firstChildType];
   const output = {};
 
   _.each(firstChild, subchild => {
-    output[subchild.name] = createQueryObject({ input: subchild });
+    output[subchild.name] = createQueryObject({
+      input: subchild,
+      transformToIDTypes,
+    });
   });
 
   if (isTopLevel) {
@@ -675,13 +680,19 @@ function createQueryObject({ input, isTopLevel, type, prefix }) {
       },
     };
   }
+
   if (hasArgs) {
     output.__args = convertArgs(args);
   }
+
   return output;
 }
 
 const quertObject = createQueryObject({
-  input: data4, isTopLevel: true, type: 'query', prefix: 'Demo0',
-});
+  input: data4,
+  isTopLevel: true,
+  type: 'query',
+  prefix: 'Demo0',
+  transformToIDTypes: ['CalulatedField2Response'],
+}); // ?
 jsonToGraphQLQuery(quertObject); // ?

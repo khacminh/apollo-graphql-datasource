@@ -1,6 +1,6 @@
 {
   "name": "appolo-graphql-datasource",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "GraphQL Datasource for Apollo Server",
   "main": "src/index.js",
   "scripts": {

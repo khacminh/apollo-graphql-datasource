@@ -38,12 +38,15 @@ function convertArgs(args, allEnums, possibleEnums) {
   return output;
 }
 
-function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, prefix }) {
+function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, prefix, transformToScalarTypes = [] }) {
   const { name, args, fieldsByTypeName } = input;
   const hasChildren = !_.isEmpty(fieldsByTypeName);
   const hasArgs = !_.isEmpty(args);
 
-  if (!hasChildren) {
+  const firstChildType = _.keys(fieldsByTypeName)[0];
+  const shouldTransformToScalar = transformToScalarTypes.includes(firstChildType);
+
+  if (!hasChildren || shouldTransformToScalar) {
     return hasArgs ? { __args: convertArgs(args) } : true;
   }
 
@@ -51,7 +54,7 @@ function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, p
   const output = {};
 
   _.each(firstChild, subchild => {
-    output[subchild.name] = createQueryObject({ input: subchild });
+    output[subchild.name] = createQueryObject({ input: subchild, transformToScalarTypes });
   });
 
   if (isTopLevel) {

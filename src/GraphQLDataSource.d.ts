@@ -14,11 +14,12 @@ declare class GraphQLDataSource extends DataSource<any> {
      * Creates an instance of GraphQLDataSource.
      * @param {String} url the URL to the graphQL server
      * @param {String} typeDefs typeDefs in String
-     * @param {string} [schemaPrefix=''] schema prefix.
+     * @param {String} [schemaPrefix=''] schema prefix.
+     * @param {[String]} [transformToScalarTypes=['']] Types will be transform to Scalar
      * The prefix will be removed from the graphql query before sending to the destination datasource
      * @memberof GraphQLDataSource
      */
-    constructor(url: string, typeDefs: string, schemaPrefix?: string);
+    constructor(url: string, typeDefs: string, schemaPrefix?: string, transformToScalarTypes?: [string]);
     baseURL: string;
     context: any;
     /**
