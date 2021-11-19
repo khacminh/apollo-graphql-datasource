@@ -2,7 +2,6 @@ const axios = require('axios');
 const { DataSource } = require('apollo-datasource');
 const { ApolloError } = require('apollo-server-errors');
 const { parseResolveInfo } = require('graphql-parse-resolve-info');
-const { jsonToGraphQLQuery } = require('json-to-graphql-query');
 const { print, buildSchema } = require('graphql');
 const { gql } = require('graphql-tag');
 const { createQueryObject, findAllEnums, getPossibleEnumTypes } = require('./utils');
@@ -57,6 +56,9 @@ class GraphQLDataSource extends DataSource {
     this.#client = axios.create({
       baseURL: url,
       timeout: 55000,
+      headers: {
+        'content-type': 'application/json',
+      },
     });
   }
 
@@ -104,9 +106,9 @@ class GraphQLDataSource extends DataSource {
     }
 
     const { headers } = options;
-    const gqlQuery = this.#parseQuery(info, type);
+    const { query: gqlQuery, operationName } = this.#parseQuery(info, type);
 
-    return this.#executeOperation(gqlQuery, headers);
+    return this.#executeOperation(gqlQuery, operationName, headers);
   }
 
   /**
@@ -130,7 +132,7 @@ class GraphQLDataSource extends DataSource {
       prefix: this.#prefix,
       transformToScalarTypes: this.#transformToScalarTypes,
     });
-    return jsonToGraphQLQuery(queryObject);
+    return queryObject;
   }
 
   /**
@@ -139,9 +141,13 @@ class GraphQLDataSource extends DataSource {
    * @param {Object} headers query headers
    * @returns
    */
-  async #executeOperation(query, headers) {
+  async #executeOperation(query, operationName, headers) {
     try {
-      const response = await this.#client.post('/', { query }, { headers });
+      const payload = {
+        operationName,
+        query,
+      };
+      const response = await this.#client.post('/', payload, { headers });
 
       return response?.data || {};
     } catch (error) {

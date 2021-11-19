@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const { EnumType } = require('json-to-graphql-query');
 const { TypeInfo, visitWithTypeInfo, visit, parse } = require('graphql');
+const { jsonToGraphQLQuery } = require('json-to-graphql-query');
 
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
@@ -57,22 +58,28 @@ function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, p
     output[subchild.name] = createQueryObject({ input: subchild, transformToScalarTypes });
   });
 
-  if (isTopLevel) {
-    const operationName = name.replace(new RegExp(prefix, 'g'), '');
-    return {
-      [type]: {
-        __name: operationName || '',
-        [operationName]: {
-          ...output,
-          __args: convertArgs(args, allEnums, possibleEnums),
-        },
+  if (!isTopLevel) {
+    if (hasArgs) {
+      output.__args = convertArgs(args);
+    }
+    return output;
+  }
+
+  // Top level return
+  const operationName = name.replace(new RegExp(prefix, 'g'), '');
+  const queryObject = {
+    [type]: {
+      __name: operationName || '',
+      [operationName]: {
+        ...output,
+        __args: convertArgs(args, allEnums, possibleEnums),
       },
-    };
-  }
-  if (hasArgs) {
-    output.__args = convertArgs(args);
-  }
-  return output;
+    },
+  };
+  return {
+    query: jsonToGraphQLQuery(queryObject),
+    operationName,
+  };
 }
 
 /**

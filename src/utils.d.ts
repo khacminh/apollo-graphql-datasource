@@ -11,13 +11,11 @@ export function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, 
     transformToScalarTypes?: any[];
 }): true | {
     __args: {};
+    query?: undefined;
+    operationName?: undefined;
 } | {
-    [x: number]: {
-        [x: number]: {
-            __args: {};
-        };
-        __name: any;
-    };
+    query: string;
+    operationName: any;
     __args?: undefined;
 };
 /**

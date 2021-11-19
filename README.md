@@ -113,3 +113,16 @@ module.exports = {
   }
 }
 ```
+
+### Transform Types to Scalar
+
+If you want to transform some **types** to scalar, provide them in constructor
+
+```js
+const dataSource = new GraphQLDataSource(
+  'http://federation.gateway.url/',
+  typeDefs,
+  'Demo0',
+  ['calulatedField2'], // provide Types to transform
+);
+```

@@ -2,10 +2,12 @@ const _ = require('lodash');
 const { jsonToGraphQLQuery, EnumType } = require('json-to-graphql-query');
 const { TypeInfo, parse, visit, visitWithTypeInfo } = require('graphql');
 
+const aa = 'Methyl salicylate 10% Topical Cream\nTitanium dioxide 0.13 mg /3.5mg Topical Lipstick\nDiclofenac sodium 75 mg Delayed Release Oral Tablet [Voltaren]\nEthanol 20% Topical Gel';
+
 const data1 = { name: 'Demo0me', alias: 'Demo0me', args: {}, fieldsByTypeName: { Demo0User: { id: { name: 'id', alias: 'id', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} }, username: { name: 'username', alias: 'username', args: {}, fieldsByTypeName: {} }, reviews: { name: 'reviews', alias: 'reviews', args: {}, fieldsByTypeName: { Demo0Review: { id: { name: 'id', alias: 'id', args: {}, fieldsByTypeName: {} }, body: { name: 'body', alias: 'body', args: {}, fieldsByTypeName: {} }, product: { name: 'product', alias: 'product', args: {}, fieldsByTypeName: { Demo0Product: { upc: { name: 'upc', alias: 'upc', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} } } } } } } } } } };
 const data2 = { name: 'Demo0topProducts', alias: 'Demo0topProducts', args: { first: 3, status: 'VALUE_2' }, fieldsByTypeName: { Demo0Product: { upc: { name: 'upc', alias: 'upc', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} } } } };
 const data3 = { name: 'Demo0me', alias: 'Demo0me', args: {}, fieldsByTypeName: { Demo0User: { id: { name: 'id', alias: 'id', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} }, username: { name: 'username', alias: 'username', args: {}, fieldsByTypeName: {} }, reviews: { name: 'reviews', alias: 'reviews', args: { first: 1 }, fieldsByTypeName: { Demo0Review: { id: { name: 'id', alias: 'id', args: {}, fieldsByTypeName: {} }, body: { name: 'body', alias: 'body', args: {}, fieldsByTypeName: {} }, product: { name: 'product', alias: 'product', args: {}, fieldsByTypeName: { Demo0Product: { upc: { name: 'upc', alias: 'upc', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} } } } } } } } } } };
-const data4 = { name: 'Demo0topProducts', alias: 'Demo0topProducts', args: { first: 3, status: 'VALUE_2' }, fieldsByTypeName: { Demo0Product: { upc: { name: 'upc', alias: 'upc', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} }, calulatedField: { name: 'calulatedField', alias: 'calulatedField', args: { inputArgs: { args1: 111, args2: 'AAA' } }, fieldsByTypeName: {} }, calulatedField2: { name: 'calulatedField2', alias: 'calulatedField2', args: { inputArgs: { args1: 456, args2: 'xyz' } }, fieldsByTypeName: { CalulatedField2Response: { value1: { name: 'value1', alias: 'value1', args: {}, fieldsByTypeName: {} }, value3: { name: 'value3', alias: 'value3', args: {}, fieldsByTypeName: {} } } } } } } };
+const data4 = { name: 'Demo0topProducts', alias: 'Demo0topProducts', args: { first: 3, status: 'VALUE_2' }, fieldsByTypeName: { Demo0Product: { upc: { name: 'upc', alias: 'upc', args: {}, fieldsByTypeName: {} }, name: { name: 'name', alias: 'name', args: {}, fieldsByTypeName: {} }, calulatedField: { name: 'calulatedField', alias: 'calulatedField', args: { inputArgs: { args1: 111, args2: 'AAA\nBBB' } }, fieldsByTypeName: {} }, calulatedField2: { name: 'calulatedField2', alias: 'calulatedField2', args: { inputArgs: { args1: 456, args2: aa } }, fieldsByTypeName: { CalulatedField2Response: { value1: { name: 'value1', alias: 'value1', args: {}, fieldsByTypeName: {} }, value3: { name: 'value3', alias: 'value3', args: {}, fieldsByTypeName: {} } } } } } } };
 const _schema = {
   kind: 'Document',
   definitions: [
@@ -670,7 +672,7 @@ function createQueryObject({ input, isTopLevel, type, prefix, transformToIDTypes
 
   if (isTopLevel) {
     const operationName = name.replace(new RegExp(prefix, 'g'), '');
-    return {
+    const queryObject = {
       [type]: {
         __name: operationName || '',
         [operationName]: {
@@ -678,6 +680,10 @@ function createQueryObject({ input, isTopLevel, type, prefix, transformToIDTypes
           __args: convertArgs(args),
         },
       },
+    };
+    return {
+      queryObject,
+      operationName,
     };
   }
 
@@ -688,11 +694,12 @@ function createQueryObject({ input, isTopLevel, type, prefix, transformToIDTypes
   return output;
 }
 
-const quertObject = createQueryObject({
+const { queryObject, operationName } = createQueryObject({
   input: data4,
   isTopLevel: true,
   type: 'query',
   prefix: 'Demo0',
   transformToIDTypes: ['CalulatedField2Response'],
 }); // ?
-jsonToGraphQLQuery(quertObject); // ?
+
+jsonToGraphQLQuery(queryObject); // ?
