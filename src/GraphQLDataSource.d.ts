@@ -16,10 +16,11 @@ declare class GraphQLDataSource extends DataSource<any> {
      * @param {String} typeDefs typeDefs in String
      * @param {String} [schemaPrefix=''] schema prefix.
      * @param {[String]} [transformToScalarTypes=['']] Types will be transform to Scalar
+     * @param {Boolean} [debug=false] debug enabled
      * The prefix will be removed from the graphql query before sending to the destination datasource
      * @memberof GraphQLDataSource
      */
-    constructor(url: string, typeDefs: string, schemaPrefix?: string, transformToScalarTypes?: [string]);
+    constructor(url: string, typeDefs: string, schemaPrefix?: string, transformToScalarTypes?: [string], debug?: boolean);
     baseURL: string;
     context: any;
     /**

@@ -3,6 +3,12 @@ const { EnumType } = require('json-to-graphql-query');
 const { TypeInfo, visitWithTypeInfo, visit, parse } = require('graphql');
 const { jsonToGraphQLQuery } = require('json-to-graphql-query');
 
+let debug = false;
+
+function setDebugFlag(isDebug) {
+  debug = isDebug;
+}
+
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
  * @typedef { import('graphql').DocumentNode} DocumentNode
@@ -33,8 +39,9 @@ function convertArgs(args, allEnums, possibleEnums) {
   }
   const output = {};
   _.each(args, (value, key) => {
-    output[key] = _.isObject(value) ? convertArgs(value)
-      : checkIsEnum(key, value, allEnums, possibleEnums) ? new EnumType(value) : value;
+    output[key] = _.isDate(value) ? value.toISOString()
+      : _.isPlainObject(value) ? convertArgs(value)
+        : checkIsEnum(key, value, allEnums, possibleEnums) ? new EnumType(value) : value;
   });
   return output;
 }
@@ -137,4 +144,5 @@ module.exports = {
   createQueryObject,
   findAllEnums,
   getPossibleEnumTypes,
+  setDebugFlag,
 };

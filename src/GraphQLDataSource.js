@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const axios = require('axios');
 const { DataSource } = require('apollo-datasource');
 const { ApolloError } = require('apollo-server-errors');
@@ -30,16 +31,19 @@ class GraphQLDataSource extends DataSource {
 
   #transformToScalarTypes = [];
 
+  #debug;
+
   /**
    * Creates an instance of GraphQLDataSource.
    * @param {String} url the URL to the graphQL server
    * @param {String} typeDefs typeDefs in String
    * @param {String} [schemaPrefix=''] schema prefix.
    * @param {[String]} [transformToScalarTypes=['']] Types will be transform to Scalar
+   * @param {Boolean} [debug=false] debug enabled
    * The prefix will be removed from the graphql query before sending to the destination datasource
    * @memberof GraphQLDataSource
    */
-  constructor(url, typeDefs, schemaPrefix = '', transformToScalarTypes = []) {
+  constructor(url, typeDefs, schemaPrefix = '', transformToScalarTypes = [], debug = false) {
     super();
     if (!url) {
       throw new Error('missing url');
@@ -52,6 +56,7 @@ class GraphQLDataSource extends DataSource {
     this.#schema = buildSchema(typeDefs, { assumeValid: true });
     this.#allEnums = findAllEnums(this.#typeDefs);
     this.#transformToScalarTypes = transformToScalarTypes;
+    this.#debug = debug;
 
     this.#client = axios.create({
       baseURL: url,
@@ -119,9 +124,16 @@ class GraphQLDataSource extends DataSource {
    */
   #parseQuery(info, type) {
     const parsedResolveInfoFragment = parseResolveInfo(info);
+    if (this.#debug) {
+      console.log('[DEBUG] --- parseResolveInfo:', JSON.stringify(parsedResolveInfoFragment));
+    }
     // const parsedResolveInfoFragment = info;
     const query = print(info.operation);
+
     const possibleEnums = getPossibleEnumTypes(this.#schema, this.#allEnums, query);
+    if (this.#debug) {
+      console.log('[DEBUG] --- all enums:', this.#allEnums);
+    }
 
     const queryObject = createQueryObject({
       input: parsedResolveInfoFragment,
@@ -147,6 +159,12 @@ class GraphQLDataSource extends DataSource {
         operationName,
         query,
       };
+
+      if (this.#debug) {
+        console.log('[DEBUG] --- operationName:', operationName);
+        console.log('[DEBUG] --- query:', JSON.stringify(query));
+      }
+
       const response = await this.#client.post('/', payload, { headers });
 
       return response?.data || {};
