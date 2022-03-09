@@ -26,6 +26,9 @@ const typeDefs = gql`
   extend type Query {
     topProducts(first: Int = 5, status: ProductEnum): [Product]
   }
+  extend type Query {
+    topProducts2(first: Int = 5, filter: topProductFilter): [Product]
+  }
   extend type Mutation {
     doSth(first: Int = 2): [Product]
   }
@@ -48,6 +51,10 @@ const typeDefs = gql`
   input SomeInput {
     args1: Int
     args2: String!
+  }
+
+  input topProductFilter {
+    status: ProductEnum
   }
 
   type CalulatedField2Response {
@@ -75,6 +82,9 @@ const resolvers = {
   },
   Query: {
     topProducts(_, args) {
+      return products.slice(0, args.first);
+    },
+    topProducts2(_, args) {
       return products.slice(0, args.first);
     },
   },

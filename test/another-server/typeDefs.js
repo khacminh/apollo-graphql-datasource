@@ -38,6 +38,10 @@ const typeDefsWithPrefix = `
     args2: String!
   }
 
+  input topProductFilter {
+    status: ProductEnum
+  }
+
   type CalulatedField2Response {
     value1: Int
     value2: Int
@@ -47,6 +51,7 @@ const typeDefsWithPrefix = `
   type Query {
     Demo0me: Demo0User
     Demo0topProducts(first: Int = 5, status: ProductEnum): [Demo0Product]
+    Demo0topProducts2(first: Int = 5, filter: topProductFilter): [Demo0Product]
   }
 
   type Mutation {

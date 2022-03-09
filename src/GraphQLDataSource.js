@@ -3,7 +3,7 @@ const axios = require('axios');
 const { DataSource } = require('apollo-datasource');
 const { ApolloError } = require('apollo-server-errors');
 const { parseResolveInfo } = require('graphql-parse-resolve-info');
-const { print, buildSchema } = require('graphql');
+const { print, buildSchema, parse } = require('graphql');
 const { gql } = require('graphql-tag');
 const { createQueryObject, findAllEnums, getPossibleEnumTypes } = require('./utils');
 
@@ -127,12 +127,31 @@ class GraphQLDataSource extends DataSource {
     if (this.#debug) {
       console.log('[DEBUG] --- parseResolveInfo:', JSON.stringify(parsedResolveInfoFragment));
     }
-    // const parsedResolveInfoFragment = info;
-    const query = print(info.operation);
+    // const query = print(info.operation);
+    const query = info.operation;
+    if (this.#debug) {
+      console.log('[DEBUG] --- query:', print(query));
+    }
 
-    const possibleEnums = getPossibleEnumTypes(this.#schema, this.#allEnums, query);
+    const { query: rebuildQuery } = createQueryObject({
+      input: parsedResolveInfoFragment,
+      allEnums: this.#allEnums,
+      possibleEnums: [],
+      isTopLevel: true,
+      type,
+      prefix: '',
+      transformToScalarTypes: this.#transformToScalarTypes,
+    });
+
+    if (this.#debug) {
+      console.log('[DEBUG] --- rebuildQuery:', rebuildQuery);
+    }
+
+    const possibleEnums = getPossibleEnumTypes(info.schema, this.#allEnums, parse(rebuildQuery));
+
     if (this.#debug) {
       console.log('[DEBUG] --- all enums:', this.#allEnums);
+      console.log('[DEBUG] --- possibleEnums:', possibleEnums);
     }
 
     const queryObject = createQueryObject({

@@ -14,7 +14,6 @@ function setDebugFlag(isDebug) {
  * @typedef { import('graphql').DocumentNode} DocumentNode
  * @typedef { import('graphql').GraphQLSchema} GraphQLSchema
  */
-
 function checkIsEnum(name, value, allEnums, possibleEnums) {
   if (typeof value !== 'string') {
     return false;
@@ -40,7 +39,7 @@ function convertArgs(args, allEnums, possibleEnums) {
   const output = {};
   _.each(args, (value, key) => {
     output[key] = _.isDate(value) ? value.toISOString()
-      : _.isPlainObject(value) ? convertArgs(value)
+      : _.isPlainObject(value) ? convertArgs(value, allEnums, possibleEnums)
         : checkIsEnum(key, value, allEnums, possibleEnums) ? new EnumType(value) : value;
   });
   return output;
@@ -96,13 +95,15 @@ function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, p
  */
 function findAllEnums(typeDefs) {
   const enumDefs = _.filter(typeDefs.definitions, x => x.kind === 'EnumTypeDefinition');
-  return _.map(enumDefs, val => ({
+  const allEnums = _.map(enumDefs, val => ({
     type: val.name.value,
     values: _.chain(val.values)
       .filter(x => x.kind === 'EnumValueDefinition' && x.name.kind === 'Name')
       .map(x => x.name.value)
       .value(),
   }));
+  const requiredEnums = _.map(allEnums, x => ({ type: `${x.type}!`, values: x.values }));
+  return [...allEnums, ...requiredEnums];
 }
 
 /**
@@ -112,7 +113,7 @@ function findAllEnums(typeDefs) {
  * @param {String} query GraphQL query
  * @returns Array of possibleEnums in the query
  */
-function getPossibleEnumTypes(schema, allEnums, query) {
+function getPossibleEnumTypes2(schema, allEnums, query) {
   const typeInfo = new TypeInfo(schema);
   const possibleEnums = [];
   const visitor = {
@@ -137,6 +138,39 @@ function getPossibleEnumTypes(schema, allEnums, query) {
     },
   };
   visit(parse(query), visitWithTypeInfo(typeInfo, visitor));
+  return possibleEnums;
+}
+
+function getPossibleEnumTypes(schema, allEnums, query) {
+  const typeInfo = new TypeInfo(schema);
+  const possibleEnums = [];
+  const visitor = {
+    enter(node) {
+      typeInfo.getArgument();
+      const inputType = typeInfo.getInputType();
+
+      if (inputType) {
+        const inputTypeName = inputType.toString();
+        const isEnum = _.some(allEnums, x => x.type === inputTypeName);
+        if (isEnum) {
+          const variableName = node?.name?.value;
+          if (variableName) {
+            const currentItem = { name: variableName, type: inputTypeName };
+            const isItemExisted = _.some(possibleEnums, x => _.isEqual(x, currentItem));
+            if (!isItemExisted) {
+              possibleEnums.push(currentItem);
+            }
+          }
+        }
+      }
+      typeInfo.enter(node);
+    },
+    leave(node) {
+      typeInfo.leave(node);
+    },
+  };
+  // visit(parse(query), visitWithTypeInfo(typeInfo, visitor),);
+  visit(query, visitWithTypeInfo(typeInfo, visitor));
   return possibleEnums;
 }
 

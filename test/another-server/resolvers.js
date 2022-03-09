@@ -29,6 +29,7 @@ module.exports = {
   Query: {
     Demo0me: (...params) => genericQuery(...params),
     Demo0topProducts: (...params) => genericQuery(...params),
+    Demo0topProducts2: (...params) => genericQuery(...params),
   },
   Mutation: {
     Demo0doSth: (...params) => genericMutation(...params),

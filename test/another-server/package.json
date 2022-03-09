@@ -12,7 +12,7 @@
   "dependencies": {
     "@apollo/federation": "0.28.0",
     "apollo-server": "2.25.2",
-    "appolo-graphql-datasource": "^0.3.6",
+    "appolo-graphql-datasource": "^0.4.22",
     "graphql": "^15.7.2",
     "graphql-fields": "^2.0.3",
     "graphql-parse-resolve-info": "^4.12.0",

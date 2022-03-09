@@ -6,6 +6,8 @@ const dataSource = new GraphQLDataSource(
   'http://localhost:4000/',
   typeDefs,
   'Demo0',
+  [],
+  true,
 );
 
 module.exports = () => ({
