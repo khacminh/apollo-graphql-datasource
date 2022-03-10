@@ -34,7 +34,13 @@ function checkIsEnum(name, value, allEnums, possibleEnums) {
 
 function convertArgs(args, allEnums, possibleEnums) {
   if (_.isEmpty(args)) {
-    return undefined;
+    let isNullPrototype = false;
+    try {
+      isNullPrototype = _.isPlainObject(args) && _.isNull(Object.getPrototypeOf(args));
+    } catch (error) {
+      isNullPrototype = false;
+    }
+    return isNullPrototype ? {} : undefined;
   }
   const output = {};
   _.each(args, (value, key) => {
