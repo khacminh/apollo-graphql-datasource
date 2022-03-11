@@ -59,7 +59,7 @@ function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, p
   const firstChildType = _.keys(fieldsByTypeName)[0];
   const shouldTransformToScalar = transformToScalarTypes.includes(firstChildType);
 
-  if (!hasChildren || shouldTransformToScalar) {
+  if (!isTopLevel && (!hasChildren || shouldTransformToScalar)) {
     return hasArgs ? { __args: convertArgs(args) } : true;
   }
 
