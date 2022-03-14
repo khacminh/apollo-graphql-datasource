@@ -3,9 +3,8 @@ const axios = require('axios');
 const { DataSource } = require('apollo-datasource');
 const { ApolloError } = require('apollo-server-errors');
 const { parseResolveInfo } = require('graphql-parse-resolve-info');
-const { print, buildSchema, parse } = require('graphql');
-const { gql } = require('graphql-tag');
-const { createQueryObject, createQueryObject2, findAllEnums, getPossibleEnumTypes, getVariableTypes } = require('./utils');
+const { print } = require('graphql');
+const { createQueryObject, getVariableTypes } = require('./utils');
 
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
@@ -23,12 +22,6 @@ class GraphQLDataSource extends DataSource {
 
   #prefix;
 
-  #allEnums;
-
-  #typeDefs;
-
-  #schema;
-
   #transformToScalarTypes = [];
 
   #debug;
@@ -36,14 +29,13 @@ class GraphQLDataSource extends DataSource {
   /**
    * Creates an instance of GraphQLDataSource.
    * @param {String} url the URL to the graphQL server
-   * @param {String} typeDefs typeDefs in String
    * @param {String} [schemaPrefix=''] schema prefix.
    * @param {[String]} [transformToScalarTypes=['']] Types will be transform to Scalar
    * @param {Boolean} [debug=false] debug enabled
    * The prefix will be removed from the graphql query before sending to the destination datasource
    * @memberof GraphQLDataSource
    */
-  constructor(url, typeDefs, schemaPrefix = '', transformToScalarTypes = [], debug = false) {
+  constructor(url, schemaPrefix = '', transformToScalarTypes = [], debug = false) {
     super();
     if (!url) {
       throw new Error('missing url');
@@ -51,10 +43,6 @@ class GraphQLDataSource extends DataSource {
 
     this.baseURL = url;
     this.#prefix = schemaPrefix;
-    this.#typeDefs = gql`${typeDefs}`;
-    // this.#schema = makeExecutableSchema({ typeDefs }, {});
-    this.#schema = buildSchema(typeDefs, { assumeValid: true });
-    this.#allEnums = findAllEnums(this.#typeDefs);
     this.#transformToScalarTypes = transformToScalarTypes;
     this.#debug = debug;
 
@@ -111,9 +99,9 @@ class GraphQLDataSource extends DataSource {
     }
 
     const { headers } = options;
-    const { query: gqlQuery, operationName } = this.#parseQuery(info, type);
+    const { query: gqlQuery, operationName, variables } = this.#parseQuery(info, type);
 
-    return this.#executeOperation(gqlQuery, operationName, headers);
+    return this.#executeOperation(gqlQuery, operationName, variables, headers);
   }
 
   /**
@@ -127,38 +115,19 @@ class GraphQLDataSource extends DataSource {
     if (this.#debug) {
       console.log('[DEBUG] --- parseResolveInfo:', JSON.stringify(parsedResolveInfoFragment));
     }
-    // const query = print(info.operation);
     const query = info.operation;
     if (this.#debug) {
       console.log('[DEBUG] --- query:', print(query));
     }
 
-    const { query: rebuildQuery } = createQueryObject({
-      input: parsedResolveInfoFragment,
-      allEnums: this.#allEnums,
-      possibleEnums: [],
-      isTopLevel: true,
-      type,
-      prefix: '',
-      transformToScalarTypes: this.#transformToScalarTypes,
-    });
+    const declaredVariables = getVariableTypes(info.schema, query, this.#prefix);
 
     if (this.#debug) {
-      console.log('[DEBUG] --- rebuildQuery:', rebuildQuery);
+      console.log('[DEBUG] --- declaredVariables:', declaredVariables);
     }
 
-    const possibleEnums = getPossibleEnumTypes(info.schema, this.#allEnums, parse(rebuildQuery));
-    const declaredVariables = getVariableTypes(info.schema, this.#allEnums, parse(rebuildQuery));
-
-    if (this.#debug) {
-      console.log('[DEBUG] --- all enums:', this.#allEnums);
-      console.log('[DEBUG] --- possibleEnums:', possibleEnums);
-    }
-
-    const queryObject = createQueryObject2({
+    const queryObject = createQueryObject({
       input: parsedResolveInfoFragment,
-      allEnums: this.#allEnums,
-      possibleEnums,
       isTopLevel: true,
       type,
       prefix: this.#prefix,
@@ -172,6 +141,8 @@ class GraphQLDataSource extends DataSource {
   /**
    * Send query to the destination server
    * @param {Object} query GraphQL query payload
+   * @param {String} operationName query or mutation name
+   * @param {Object} variables operation variables
    * @param {Object} headers query headers
    * @returns
    */

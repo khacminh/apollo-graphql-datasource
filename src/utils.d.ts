@@ -1,14 +1,15 @@
 export type GraphQLResolveInfo = import('graphql/type').GraphQLResolveInfo;
 export type DocumentNode = import('graphql').DocumentNode;
 export type GraphQLSchema = import('graphql').GraphQLSchema;
-export function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, prefix, transformToScalarTypes }: {
+export function setDebugFlag(isDebug: any): void;
+export function getVariableTypes(schema: any, query: any, prefix?: string): {};
+export function createQueryObject({ input, isTopLevel, type, prefix, transformToScalarTypes, declaredVariables }: {
     input: any;
-    allEnums: any;
-    possibleEnums: any;
     isTopLevel: any;
     type: any;
     prefix: any;
     transformToScalarTypes?: any[];
+    declaredVariables?: any[];
 }): true | {
     __args: {};
     query?: undefined;
@@ -18,17 +19,3 @@ export function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, 
     operationName: any;
     __args?: undefined;
 };
-/**
- *
- * @param {DocumentNode} typeDefs typeDefs
- * @returns
- */
-export function findAllEnums(typeDefs: DocumentNode): any;
-/**
- *
- * @param {GraphQLSchema} schema schema
- * @param {[Object]} allEnums all enums in the schema
- * @param {String} query GraphQL query
- * @returns Array of possibleEnums in the query
- */
-export function getPossibleEnumTypes(schema: GraphQLSchema, allEnums: [any], query: string): any[];
