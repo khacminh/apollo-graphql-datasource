@@ -5,7 +5,7 @@ const { ApolloError } = require('apollo-server-errors');
 const { parseResolveInfo } = require('graphql-parse-resolve-info');
 const { print, buildSchema, parse } = require('graphql');
 const { gql } = require('graphql-tag');
-const { createQueryObject, findAllEnums, getPossibleEnumTypes } = require('./utils');
+const { createQueryObject, createQueryObject2, findAllEnums, getPossibleEnumTypes, getVariableTypes } = require('./utils');
 
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
@@ -148,13 +148,14 @@ class GraphQLDataSource extends DataSource {
     }
 
     const possibleEnums = getPossibleEnumTypes(info.schema, this.#allEnums, parse(rebuildQuery));
+    const declaredVariables = getVariableTypes(info.schema, this.#allEnums, parse(rebuildQuery));
 
     if (this.#debug) {
       console.log('[DEBUG] --- all enums:', this.#allEnums);
       console.log('[DEBUG] --- possibleEnums:', possibleEnums);
     }
 
-    const queryObject = createQueryObject({
+    const queryObject = createQueryObject2({
       input: parsedResolveInfoFragment,
       allEnums: this.#allEnums,
       possibleEnums,
@@ -162,7 +163,9 @@ class GraphQLDataSource extends DataSource {
       type,
       prefix: this.#prefix,
       transformToScalarTypes: this.#transformToScalarTypes,
+      declaredVariables,
     });
+    queryObject.variables = parsedResolveInfoFragment.args;
     return queryObject;
   }
 
@@ -172,16 +175,18 @@ class GraphQLDataSource extends DataSource {
    * @param {Object} headers query headers
    * @returns
    */
-  async #executeOperation(query, operationName, headers) {
+  async #executeOperation(query, operationName, variables, headers) {
     try {
       const payload = {
         operationName,
         query,
+        variables,
       };
 
       if (this.#debug) {
         console.log('[DEBUG] --- operationName:', operationName);
         console.log('[DEBUG] --- query:', JSON.stringify(query));
+        console.log('[DEBUG] --- variables:', JSON.stringify(variables));
       }
 
       const response = await this.#client.post('/', payload, { headers });

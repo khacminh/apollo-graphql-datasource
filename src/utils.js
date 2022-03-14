@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const { EnumType } = require('json-to-graphql-query');
+const { EnumType, VariableType } = require('json-to-graphql-query');
 const { TypeInfo, visitWithTypeInfo, visit, parse } = require('graphql');
 const { jsonToGraphQLQuery } = require('json-to-graphql-query');
 
@@ -51,6 +51,18 @@ function convertArgs(args, allEnums, possibleEnums) {
   return output;
 }
 
+function convertArgs2(args, declaredVariables) {
+  const output = {};
+
+  _.each(args, (_value, key) => {
+    const isDeclared = declaredVariables[key];
+    if (isDeclared) {
+      output[key] = new VariableType(key);
+    }
+  });
+  return output;
+}
+
 function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, prefix, transformToScalarTypes = [] }) {
   const { name, args, fieldsByTypeName } = input;
   const hasChildren = !_.isEmpty(fieldsByTypeName);
@@ -94,6 +106,51 @@ function createQueryObject({ input, allEnums, possibleEnums, isTopLevel, type, p
   };
 }
 
+function createQueryObject2({ input, isTopLevel, type, prefix, transformToScalarTypes = [], declaredVariables }) {
+  const { name, args, fieldsByTypeName } = input;
+  const hasChildren = !_.isEmpty(fieldsByTypeName);
+  const hasArgs = !_.isEmpty(args);
+
+  const firstChildType = _.keys(fieldsByTypeName)[0];
+  const shouldTransformToScalar = transformToScalarTypes.includes(firstChildType);
+
+  if (!isTopLevel && (!hasChildren || shouldTransformToScalar)) {
+    return hasArgs ? { __args: convertArgs(args) } : true;
+  }
+
+  const firstChild = fieldsByTypeName[_.keys(fieldsByTypeName)[0]];
+  const output = {};
+
+  _.each(firstChild, subchild => {
+    output[subchild.name] = createQueryObject({ input: subchild, transformToScalarTypes });
+  });
+
+  if (!isTopLevel) {
+    if (hasArgs) {
+      output.__args = convertArgs(args);
+    }
+    return output;
+  }
+
+  // Top level return
+  const operationName = name.replace(new RegExp(prefix, 'g'), '');
+  const queryObject = {
+    [type]: {
+      __name: operationName || '',
+      [operationName]: {
+        ...output,
+        __args: convertArgs2(args, declaredVariables),
+      },
+      __variables: declaredVariables,
+    },
+  };
+
+  return {
+    query: jsonToGraphQLQuery(queryObject),
+    operationName,
+  };
+}
+
 /**
  *
  * @param {DocumentNode} typeDefs typeDefs
@@ -109,7 +166,9 @@ function findAllEnums(typeDefs) {
       .value(),
   }));
   const requiredEnums = _.map(allEnums, x => ({ type: `${x.type}!`, values: x.values }));
-  return [...allEnums, ...requiredEnums];
+  const arrayEnums = _.map(allEnums, x => ({ type: `[${x.type}]`, values: x.values }));
+  const requiredArrayEnums = _.map(allEnums, x => ({ type: `[${x.type}]!`, values: x.values }));
+  return [...allEnums, ...requiredEnums, ...arrayEnums, ...requiredArrayEnums];
 }
 
 /**
@@ -180,9 +239,40 @@ function getPossibleEnumTypes(schema, allEnums, query) {
   return possibleEnums;
 }
 
+function getVariableTypes(schema, allEnums, query) {
+  const typeInfo = new TypeInfo(schema);
+  const possibleVariables = {};
+
+  const visitor = {
+    enter(node) {
+      const args = typeInfo.getArgument();
+      if (args) {
+        const { name: argName, defaultValue, type } = args;
+
+        const hasVariable = !!possibleVariables[argName];
+        if (!hasVariable) {
+          if (defaultValue) {
+            possibleVariables[argName] = `${type} = "${defaultValue}"`;
+          } else {
+            possibleVariables[argName] = type;
+          }
+        }
+      }
+      typeInfo.enter(node);
+    },
+    leave(node) {
+      typeInfo.leave(node);
+    },
+  };
+  visit(query, visitWithTypeInfo(typeInfo, visitor));
+  return possibleVariables;
+}
+
 module.exports = {
   createQueryObject,
   findAllEnums,
   getPossibleEnumTypes,
   setDebugFlag,
+  getVariableTypes,
+  createQueryObject2,
 };
