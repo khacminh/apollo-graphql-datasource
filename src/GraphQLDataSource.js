@@ -4,7 +4,7 @@ const { DataSource } = require('apollo-datasource');
 const { ApolloError } = require('apollo-server-errors');
 const { parseResolveInfo } = require('graphql-parse-resolve-info');
 const { print } = require('graphql');
-const { createQueryObject, getVariableTypes } = require('./utils');
+const { createQueryObject, getVariableTypes, removeNullVariables } = require('./utils');
 
 /**
  * @typedef { import('graphql/type').GraphQLResolveInfo } GraphQLResolveInfo
@@ -121,9 +121,11 @@ class GraphQLDataSource extends DataSource {
     }
 
     const declaredVariables = getVariableTypes(info.schema, query, this.#prefix);
+    const filteredVariables = removeNullVariables(declaredVariables, parsedResolveInfoFragment.args);
 
     if (this.#debug) {
       console.log('[DEBUG] --- declaredVariables:', declaredVariables);
+      console.log('[DEBUG] --- filteredVariables:', filteredVariables);
     }
 
     const queryObject = createQueryObject({
@@ -132,9 +134,10 @@ class GraphQLDataSource extends DataSource {
       type,
       prefix: this.#prefix,
       transformToScalarTypes: this.#transformToScalarTypes,
-      declaredVariables,
+      declaredVariables: filteredVariables,
     });
     queryObject.variables = parsedResolveInfoFragment.args;
+    // queryObject.variables = addNullVariables(declaredVariables, parsedResolveInfoFragment.args);
     return queryObject;
   }
 

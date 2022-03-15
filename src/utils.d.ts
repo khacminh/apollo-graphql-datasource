@@ -19,3 +19,5 @@ export function createQueryObject({ input, isTopLevel, type, prefix, transformTo
     operationName: any;
     __args?: undefined;
 };
+export function addNullVariables(declaredVariables: any, variables: any): any;
+export function removeNullVariables(declaredVariables: any, variables: any): any;

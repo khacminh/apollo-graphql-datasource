@@ -102,8 +102,42 @@ function getVariableTypes(schema, query, prefix = '') {
   return possibleVariables;
 }
 
+function addNullVariables(declaredVariables, variables) {
+  const keys = _.keys(variables);
+  const delcaredKeys = _.keys(declaredVariables);
+  const returnVariables = _.cloneDeep(variables);
+
+  _.each(delcaredKeys, delcaredKey => {
+    const hasKey = keys.includes(delcaredKey);
+    if (!hasKey) {
+      returnVariables[delcaredKey] = null;
+    }
+  });
+
+  return returnVariables;
+}
+
+function removeNullVariables(declaredVariables, variables) {
+  const keys = _.compact(_.map(variables, (value, key) => (value ? key : null)));
+  const delcaredKeys = _.keys(declaredVariables);
+  const omitKeys = [];
+  let returnVariables = _.cloneDeep(declaredVariables);
+
+  _.each(delcaredKeys, delcaredKey => {
+    const hasKey = keys.includes(delcaredKey);
+    if (!hasKey) {
+      omitKeys.push(delcaredKey);
+    }
+  });
+
+  returnVariables = _.omit(returnVariables, omitKeys);
+  return returnVariables;
+}
+
 module.exports = {
   setDebugFlag,
   getVariableTypes,
   createQueryObject,
+  addNullVariables,
+  removeNullVariables,
 };
