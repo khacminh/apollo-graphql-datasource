@@ -167,6 +167,9 @@ class GraphQLDataSource extends DataSource {
 
       return response?.data || {};
     } catch (error) {
+      if (this.#debug) {
+        console.log('[DEBUG] --- executeOperation ERROR:', error?.response?.data);
+      }
       const status = error?.response?.status || 'UNKNOWN';
       throw new ApolloError(`Data Source Error with status code: ${status}`);
     }
